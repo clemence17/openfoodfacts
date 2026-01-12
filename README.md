@@ -40,7 +40,13 @@ Le cache est écrit dans `data/off_cache.sqlite`.
 ## 3) Lancer le site (Streamlit)
 
 ```powershell
-streamlit run app.py
+./.venv/Scripts/python.exe -m streamlit run app.py
+```
+
+Si le port 8501 est déjà utilisé, spécifie un autre port:
+
+```powershell
+./.venv/Scripts/python.exe -m streamlit run app.py --server.port 8502
 ```
 
 ## Mise en ligne gratuite (mensuelle) via GitHub Pages

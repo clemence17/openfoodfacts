@@ -1,0 +1,6 @@
+- Projet: cache local OpenFoodFacts + app Streamlit
+- Objectif: maintenir un cache local (SQLite) mis à jour régulièrement, puis afficher des métriques/calculs via Streamlit.
+- Contraintes:
+  - Éviter de télécharger des dumps complets par défaut (trop volumineux) ; préférer une synchronisation "recent" et paramétrable.
+  - Stockage local: SQLite dans `data/off_cache.sqlite`.
+  - Les scripts doivent fonctionner sous Windows (PowerShell) et être planifiables via Task Scheduler.

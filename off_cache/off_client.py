@@ -15,6 +15,10 @@ class SearchParams:
     page_size: int = 200
     fields: str = (
         "code,product_name,brands,categories,countries,nutriscore_grade,"
+        "ecoscore_grade,nova_group,ecoscore_data,environmental_score,"
+        "image_small_url,image_front_small_url,"
+        "origins,origins_tags,manufacturing_places,manufacturing_places_tags,"
+        "countries_tags,additives_n,additives_tags,"
         "nutriments,last_modified_t,created_t,quantity"
     )
 
@@ -81,3 +85,77 @@ def fetch_recent_products(
 
         if sleep_s:
             time.sleep(sleep_s)
+
+
+def fetch_product_by_code(
+    code: str,
+    *,
+    timeout_s: int = 30,
+    verify: bool | str | None = None,
+) -> Optional[Dict[str, Any]]:
+    """Fetch a single product by barcode using API v2.
+
+    Returns the product dict, or None if not found.
+    """
+
+    code = str(code).strip()
+    if not code:
+        return None
+
+    sess = _session()
+    if verify is not None:
+        sess.verify = verify
+
+    url = f"{OFF_BASE_URL}/api/v2/product/{code}.json"
+    params = {"fields": SearchParams().fields}
+
+    r = sess.get(url, params=params, timeout=timeout_s)
+    if r.status_code == 404:
+        return None
+    r.raise_for_status()
+    payload = r.json()
+    product = payload.get("product")
+    if isinstance(product, dict) and product.get("code"):
+        return product
+    return None
+
+
+def search_products_by_name_online(
+    query: str,
+    *,
+    limit: int = 25,
+    timeout_s: int = 30,
+    verify: bool | str | None = None,
+) -> list[Dict[str, Any]]:
+    """Search products by name using the legacy search endpoint.
+
+    This complements the local SQLite cache. It returns a list of product dicts
+    (with the standard SearchParams fields).
+    """
+
+    q = (query or "").strip()
+    if not q:
+        return []
+
+    sess = _session()
+    if verify is not None:
+        sess.verify = verify
+
+    url = f"{OFF_BASE_URL}/cgi/search.pl"
+    params = {
+        "action": "process",
+        "json": 1,
+        "search_terms": q,
+        "page": 1,
+        "page_size": max(1, min(int(limit), 100)),
+        "fields": SearchParams().fields,
+    }
+    r = sess.get(url, params=params, timeout=timeout_s)
+    r.raise_for_status()
+    payload = r.json()
+    products = payload.get("products") or []
+    out: list[Dict[str, Any]] = []
+    for p in products:
+        if isinstance(p, dict) and p.get("code"):
+            out.append(p)
+    return out
